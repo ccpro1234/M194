@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SA — Baccarat  META AI V.Seeded / Deterministic (Undo แล้วไม่เคลื่อน)</title>
+
+<style>
+:root{
+--bg:#0b0b0d;
+--panel:#0f1113;
+--gold:#ffd24d;
+--p:#33b5ff;
+--b:#ff6b6b;
+--ok:#00ff88;
+--bad:#ff0033;
+--text:#e6eef6;
+--muted:#9aa7b2;
+}
+*{box-sizing:border-box;font-family:Consolas,Segoe UI,monospace}
+body{margin:0;background:var(--bg);color:var(--text)}
+
+.top{
+background:linear-gradient(#111,#000);
+padding:10px 14px;
+display:flex;
+align-items:center;
+gap:14px;
+}
+.title{color:var(--gold);font-size:20px;font-weight:bold}
+.info{color:var(--gold);font-size:14px}
+.zone{font-weight:bold}
+.spacer{flex:1}
+
+.controls{padding:10px;display:flex;gap:8px}
+button{
+border:none;padding:10px 18px;
+font-size:15px;font-weight:bold;cursor:pointer
+}
+.player{background:var(--p);color:#02131a}
+.banker{background:var(--b);color:#200906}
+.dark{background:#1a1a1a;color:#fff;border:1px solid #333}
+
+.main{
+display:grid;
+grid-template-columns:1fr 420px;
+gap:10px;padding:10px
+}
+.panel{background:var(--panel);padding:10px}
+
+.lane{
+display:grid;
+grid-template-columns:90px 1fr 120px;
+gap:6px;padding:4px 0;font-size:14px
+}
+.lane strong{font-weight:bold}
+
+.lane.gold{background:#3a2a0b;color:var(--gold)}
+.lane.good{background:#0b3a1a;color:#7cffb2}
+.lane.bad{background:#3a0b0b;color:#ff6b6b}
+
+canvas{background:#050607;width:100%;height:260px}
+
+.legend{font-size:13px;margin-top:8px}
+.legend div{margin:2px 0}
+
+.alert{
+margin-top:8px;
+padding:6px;
+font-size:13px;
+font-weight:bold;
+display:none
+}
+.alert.danger{background:#ff6b6b;color:#111}
+.alert.safe{background:#7cffb2;color:#111}
+
+.footer{
+text-align:center;font-size:11px;
+color:var(--muted);padding:6px
+}/* ===== LOGIN ===== */
+.login-box{
+ position:fixed;
+ inset:0;
+ background:#000;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ z-index:9999;
+}
+.login{
+ background:#111;
+ border:1px solid #333;
+ padding:20px;
+ width:260px;
+ text-align:center;
+}
+.login h2{
+ margin:0 0 10px;
+ color:var(--gold);
+}
+.login input{
+ width:100%;
+ margin:6px 0;
+ padding:8px;
+ background:#000;
+ color:#fff;
+ border:1px solid #333;
+}
+.login button{
+ width:100%;
+ margin-top:8px;
+ padding:8px;
+ background:var(--gold);
+ border:none;
+ font-weight:bold;
+ cursor:pointer;
+}
+.login .err{
+ color:#ff6b6b;
+ font-size:12px;
+ margin-top:6px;
+ display:none;
+}
+/* ===== META RESULT BADGE STYLE ===== */
+.meta-badges{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:6px;
+}
+
+.badge{
+  width:26px;
+  height:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:16px;
+  font-weight:bold;
+  border-radius:4px;
+  box-shadow:0 0 4px rgba(0,0,0,0.6);
+}
+
+.badge.win{
+  background:#1f7a1f;
+  color:#fff;
+  box-shadow:0 0 6px #00ff88;
+}
+
+.badge.lose{
+  background:#7a1f1f;
+  color:#fff;
+  box-shadow:0 0 6px #ff0033;
+}
+
+/* ===== META HEADER ===== */
+.meta-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:16px;
+  color:var(--gold);
+  font-weight:bold;
+}
+
+.meta-robot{
+  width:28px;
+  height:28px;
+  filter:drop-shadow(0 0 6px #00ffcc);
+}
+
+/* ===== META CONF BIG ===== */
+.meta-confidence{
+  font-size:1.3em;   /* ขยาย 1.3 เท่า */
+  font-weight:bold;
+  color:#ffd24d;
+}
+
+/* ===== META % BLINK ===== */
+
+.meta-summary{
+  margin-top:10px;
+  font-size:14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:#0e0e0e;
+  padding:6px 10px;
+  border-radius:6px;
+  border:1px solid #222;
+}
+
+.meta-pct{
+  font-size:1.5em;      /* 1.5 เท่า */
+  font-weight:bold;
+  color:#ffd24d;
+  animation:blinkGlow 1.2s infinite ease-in-out;
+}
+
+@keyframes blinkGlow{
+  0%{
+    opacity:1;
+    transform:scale(1);
+    text-shadow:0 0 6px #ffd24d;
+  }
+  50%{
+    opacity:0.7;
+    transform:scale(1.08);
+    text-shadow:0 0 18px #00ffcc;
+  }
+  100%{
+    opacity:1;
+    transform:scale(1);
+    text-shadow:0 0 6px #ffd24d;
+  }
+}
+
+/* ===== META SIDE BIG BLINK ===== */
+.meta-side{
+  font-size:2.2em;
+  font-weight:bold;
+  text-align:center;   /* กันเยื้อง */
+  animation:metaBlinkSoft 1.4s infinite;
+}
+
+@keyframes metaBlinkSoft{
+  0%{
+    opacity:1;
+    text-shadow:0 0 6px currentColor;
+  }
+  50%{
+    opacity:0.6;
+    text-shadow:0 0 14px currentColor;
+  }
+  100%{
+    opacity:1;
+    text-shadow:0 0 6px currentColor;
+  }
+}
+ 
+.meta-advice{
+  animation:adviceGlow 1.5s infinite ease-in-out;
+}
+
+@keyframes adviceGlow{
+  0%{opacity:1}
+  50%{opacity:.6}
+  100%{opacity:1}
+}
+
+/* ===== LED RUNNING TEXT ===== */
+.led-text{
+  position:absolute;          /* 🔥 สำคัญ */
+  left:0;                     /* 🔥 สำคัญ */
+  white-space:nowrap;
+  color:#ffff33;
+  font-weight:bold;
+  font-size:13px;
+  letter-spacing:2px;
+  text-shadow:
+    0 0 8px #ffff33,
+    0 0 16px #ffd700,
+    0 0 30px #ffaa00;
+  will-change: transform;
+  animation:ledRun 8s linear infinite;
+}
+
+/* ===== LED BAR ===== */
+.led-bar{
+  width:100%;
+  overflow:hidden;
+  background:#111;
+  border-top:1px solid #333;
+  padding:6px 0;
+  position:relative;   /* ต้องมี */
+}
+
+@keyframes ledRun{
+  0%{
+    transform:translateX(100vw);
+  }
+  100%{
+    transform:translateX(-100%);
+  }
+}
+
+/* ===== PREMIUM ANIMATED BACKGROUND ===== */
+body{
+  margin:0;
+  color:var(--text);
+  overflow-x:hidden;
+
+  background:
+    radial-gradient(circle at 20% 30%, rgba(0,255,200,0.08), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(255,210,77,0.08), transparent 40%),
+    linear-gradient(135deg, #050607, #0b0b0d 40%, #050607);
+
+  background-size: 200% 200%;
+  animation: bgFlow 18s ease infinite;
+}
+
+/* 🔥 Layer แสงลอย */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+
+  background:
+    radial-gradient(circle at 30% 20%, rgba(0,255,180,0.12), transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(255,180,0,0.12), transparent 50%);
+
+  animation: glowMove 25s linear infinite;
+}
+
+/* 🔥 Layer grid ลึกๆ */
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+
+  background-size: 40px 40px;
+
+  mask-image: radial-gradient(circle at center, rgba(0,0,0,0.6), transparent 80%);
+}
+
+/* ===== ANIMATION ===== */
+
+/* ไหลทั้งฉาก */
+@keyframes bgFlow{
+  0%{
+    background-position: 0% 50%;
+  }
+  50%{
+    background-position: 100% 50%;
+  }
+  100%{
+    background-position: 0% 50%;
+  }
+}
+
+/* แสงลอย */
+@keyframes glowMove{
+  0%{
+    transform: translate(0,0);
+  }
+  50%{
+    transform: translate(-40px, 30px);
+  }
+  100%{
+    transform: translate(0,0);
+  }
+}
+
+
+.robot-top{
+  position: fixed;
+  top: 70px;   /* 🔥 ขยับลง ไม่ชน header */
+  right: 16px;
+
+  width: 100px;
+  height: auto;
+
+  z-index: 999;
+  pointer-events: none;
+
+  opacity: 0.9;
+
+  filter:
+    drop-shadow(0 0 10px rgba(0,255,200,0.7))
+    drop-shadow(0 0 25px rgba(0,255,200,0.3));
+
+  animation:
+    floatRobot 3s ease-in-out infinite,
+    robotGlow 2.5s ease-in-out infinite;
+}
+
+@keyframes floatRobot{
+  0%{ transform: translateY(0px); }
+  50%{ transform: translateY(-8px); }
+  100%{ transform: translateY(0px); }
+}
+
+@keyframes robotGlow{
+  0%{ filter: drop-shadow(0 0 6px #00ffcc); }
+  50%{ filter: drop-shadow(0 0 20px #00ffcc); }
+  100%{ filter: drop-shadow(0 0 6px #00ffcc); }
+}
+
+
+</style>
+</head>
+
+<body>
+
+  <img src="robotcom.png" class="robot-top">
+
+<!-- LOGIN -->
+<div class="login-box" id="loginBox">
+  <div class="login">
+    <h2>LOGIN</h2>
+    <input id="user" placeholder="User">
+    <input id="pass" type="password" placeholder="Password">
+    <button onclick="login()">LOGIN</button>
+    <div class="err" id="err">User หรือ Password ผิด</div>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+
+    <!-- 🤖 ROBOT -->
+  <img src="robotcom.png" class="robot-top">
+
+<div class="top">
+  <div class="title"> Baccarat  META AI V.17 เลน</div>
+  <div class="info" id="best">Best Lane: - | %- | Predict=- | Conf=-</div>
+  <div class="info zone" id="zone">Zone: NORMAL</div>
+  <div class="spacer"></div>
+  <div class="info" id="count">P=0 | B=0 | Total=0</div>
+</div>
+
+<div class="controls">
+  <button class="player" onclick="add('P')">PLAYER</button>
+  <button class="banker" onclick="add('B')">BANKER</button>
+  <button class="dark" onclick="undo()">UNDO</button>
+  <button class="dark" onclick="clearAll()">CLEAR</button>
+</div>
+
+<div class="main">
+  <div class="panel" id="lanes"></div>
+
+  <div class="panel">
+    <canvas id="road" width="360" height="260"></canvas>
+
+    <div class="legend">
+      <div style="color:var(--p)">P = Player</div>
+      <div style="color:var(--b)">B = Banker</div>
+      <div style="color:var(--ok)">/ = Correct</div>
+      <div style="color:var(--bad)">X = Wrong</div>
+    </div>
+
+    <div class="alert danger" id="alertDanger"></div>
+    <div class="alert safe" id="alertSafe"></div>
+
+  <div class="legend" id="master">Master Vote: -</div>
+
+<div class="panel" style="margin-top:10px;background:#141414;border:1px solid #333;">
+  <div class="meta-header">
+  <img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
+       class="meta-robot">
+  <span>META AI DECISION</span>
+</div>
+  <div id="aiBox" style="margin-top:6px;font-size:14px">
+    WAIT
+  </div>
+<div id="patternWarn"></div>
+
+<div id="warnImageBox" style="
+  margin-top:8px;
+  text-align:center;
+">
+
+  <div style="
+    font-weight:bold;
+    color:#ff6b6b;
+    margin-bottom:6px;
+  ">
+    ⚠ ระวัง 2 เค้านี้อันตราย!
+  </div>
+
+  <!-- รูปที่ 1 -->
+  <img
+       src="warn.png"
+       style="
+         max-width:100%;
+         border:2px solid #ff6b6b;
+         border-radius:6px;
+         box-shadow:0 0 12px #ff0033;
+         margin-bottom:8px;
+       ">
+
+  <!-- รูปที่ 2 -->
+  <img
+       src="warn2.png"
+       style="
+         max-width:100%;
+         border:2px solid #ff6b6b;
+         border-radius:6px;
+         box-shadow:0 0 12px #ff0033;
+       ">
+</div>
+
+<div id="metaResult" style="margin-top:8px;font-size:13px;color:#aaa"></div>
+
+<div id="assistBox" style="margin-top:8px;font-size:14px;font-weight:bold"></div>
+
+</div>
+</div>
+<div class="footer">
+  Version 1 |
+  หมดอายุ: 17 เมษายน พ.ศ. 2569
+</div>
+
+<div class="led-bar">
+  <div class="led-text"> Modify By อ.Maxma </div>
+</div>
+
+<script>
+
+const EXPIRE_DATE = new Date('2026-04-17T23:59:59');
+
+(function checkExpire(){
+  const now = new Date();
+  if(now > EXPIRE_DATE){
+    document.body.innerHTML = `
+      <div style="
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        height:100vh;
+        background:#000;
+        color:#ffd24d;
+        font-size:22px;
+        font-family:Consolas;
+        text-align:center;
+      ">
+        โปรแกรมหมดอายุแล้ว<br>
+        หมดอายุวันที่ 17 เมษายน พ.ศ. 2569
+      </div>
+    `;
+    throw new Error("EXPIRED");
+  }
+})();
+
+function login(){
+ const u=document.getElementById('user').value;
+ const p=document.getElementById('pass').value;
+ if(u==="1234" && p==="1234"){
+   document.getElementById('loginBox').style.display="none";
+   document.getElementById('app').style.display="block";
+ }else{
+   document.getElementById('err').style.display="block";
+ }
+}
+
+/* ===== SEEDED RANDOM ===== */
+
+let baseSeed = 123456;   // ค่าเริ่มต้นหลัก
+function randomAt(step, laneIndex){
+  let s = baseSeed + step*100 + laneIndex*7;
+  s = (s * 1664525 + 1013904223) % 4294967296;
+  return s / 4294967296;
+}
+
+/* ===== END SEEDED RANDOM ===== */
+
+const ROWS=6,COLS=30;
+const history=[];
+const lanes=[...Array(17)].map(()=>({items:[],pred:null}));
+
+let metaHistory = [];   // เก็บผล / หรือ X ของ META AI
+let lastMetaPick = null;
+let currentAI = null;   // ← เพิ่มบรรทัดนี้ตรงนี้
+let metaPickHistory = [];   // 👈 เพิ่มบรรทัดนี้ตรงนี้
+
+
+/* === FORMULAS f1–f15 (ตรง Python) === */
+const F=[
+h=>h.at(-1),
+h=>h.at(-1)==='P'?'B':'P',
+h=>h.filter(x=>x==='P').length>h.filter(x=>x==='B').length?'P':'B',
+h=>h.length%2===0?'P':'B',
+h=>h.length>1?h.at(-1):null,
+h=>h.length>1?(h.at(-1)==='P'?'B':'P'):null,
+h=>randomAt(h.length,6)>.5?'P':'B',
+h=>h.length<4?null:(h.slice(-4).filter(x=>x==='P').length>2?'P':'B'),
+h=>h.length<6?null:(h.slice(-3).filter(x=>x==='P').length>1?'P':'B'),
+h=>h.length<5?null:(h.slice(-5).filter(x=>x==='P').length>2?'B':'P'),
+h=>h.length<3?null:h.at(-3),
+h=>h.length<4?null:(h.at(-1)===h.at(-3)?'P':'B'),
+h=>{
+ if(h.length<6)return null;
+ let s=1;
+ for(let i=h.length-1;i>0;i--){if(h[i]===h[i-1])s++;else break}
+ return s>=3?h.at(-1):(h.at(-1)==='P'?'B':'P');
+},
+h=>h.length<4?null:(h.at(-2)===h.at(-1)?(h.at(-1)==='P'?'B':'P'):h.at(-1)),
+h=>{
+ if(h.length<8)return null;
+ let a=h.slice(-8);
+ let d=a.filter(x=>x==='P').length-a.filter(x=>x==='B').length;
+ return d>=2
+   ? 'P'
+   : d<=-2
+     ? 'B'
+     : (randomAt(h.length,14) > .5 ? 'P' : 'B');
+
+
+}, 
+
+// === f16 ===
+h=>{
+  if(h.length < 5) return null;
+
+  let streakSide = h[h.length-2];
+  let streak = 1;
+
+  for(let i=h.length-3;i>=0;i--){
+    if(h[i] === streakSide) streak++;
+    else break;
+  }
+
+  if(streak >= 3 && h[h.length-1] !== streakSide){
+    return streakSide;
+  }
+
+  return null;
+},
+
+// === f17 ===
+h=>{
+  if(h.length < 3) return null;
+
+  let last3 = h.slice(-3);
+
+  let p = last3.filter(x=>x==='P').length;
+  let b = last3.filter(x=>x==='B').length;
+
+  if(p >= 2) return 'P';
+  if(b >= 2) return 'B';
+
+  return null;
+}
+
+];
+
+/* === DETECTORS === */
+function detectDragon(){
+ if(history.length<4)return null;
+ let s=1;
+ for(let i=history.length-1;i>0;i--){if(history[i]===history[i-1])s++;else break}
+ return s>=4?history.at(-1):null;
+}
+function detectPingpong(){
+ if(history.length<4)return false;
+ let a=history.slice(-4);
+ return a[0]===a[2] && a[1]===a[3] && a[0]!==a[1];
+}
+
+function detectTwoCutOne(){
+  if(history.length < 6) return false;
+
+  let h = history.slice(-6);
+
+  // รูปแบบ เช่น P P B P P B หรือ B B P B B P
+  return (
+    h[0] === h[1] &&
+    h[2] !== h[1] &&
+    h[3] === h[4] &&
+    h[5] !== h[4] &&
+    h[0] === h[3] &&
+    h[2] === h[5]
+  );
+}
+
+/* === ACTIONS === */
+function add(v){
+
+  // 1️⃣ คำนวณ pred ก่อน
+  lanes.forEach((l,i)=>{
+    l.pred = F[i](history);
+  });
+
+  // 2️⃣ คำนวณ META จาก pred ชุดนี้ แล้วล็อกไว้
+  currentAI = metaAI();
+  lastMetaPick = currentAI && currentAI.side 
+                 ? currentAI.side 
+                 : null;
+
+// 👇 เพิ่มตรงนี้เลย (ก่อน push history)
+metaPickHistory.push(lastMetaPick);
+
+  // 3️⃣ ใส่ผลจริง
+  history.push(v);
+
+  // 4️⃣ ตัดสิน lane ถูก/ผิด
+  lanes.forEach(l=>{
+    if(l.pred){
+      l.items.push(l.pred === v ? '/' : 'X');
+    }
+  });
+
+  // 5️⃣ ตัดสิน META ถูก/ผิด
+  if(lastMetaPick){
+    metaHistory.push(
+      lastMetaPick === v ? '/' : 'X'
+    );
+  }
+
+  render();
+}
+
+function undo(){
+
+  if(history.length===0) return;
+
+  const snapshot = history.slice(0, -1);
+
+  // reset ทั้งหมด
+  history.length = 0;
+  metaHistory.length = 0;
+  metaPickHistory.length = 0;
+
+  lanes.forEach(l=>{
+    l.items = [];
+    l.pred = null;
+  });
+
+  lastMetaPick = null;
+  currentAI = null;
+
+  // 🔥 rebuild แบบเดียวกับ add เป๊ะ
+    snapshot.forEach(v=>{
+
+    lanes.forEach((l,i)=>{
+      l.pred = F[i](history);
+    });
+
+    currentAI = metaAI();
+    lastMetaPick = currentAI?.side || null;
+
+    metaPickHistory.push(lastMetaPick);
+
+    history.push(v);
+
+    lanes.forEach(l=>{
+      if(l.pred){
+        l.items.push(l.pred === v ? '/' : 'X');
+      }
+    });
+
+    if(lastMetaPick){
+      metaHistory.push(lastMetaPick === v ? '/' : 'X');
+    }
+
+  });
+
+  // 🔥 ตรงนี้คือจุดที่ต้องเพิ่ม (วางตรงนี้เลย)
+  lanes.forEach((l,i)=>{
+    l.pred = F[i](history);
+  });
+  currentAI = metaAI();
+
+  render();
+}
+function clearAll(){
+  history.length=0;
+
+  lanes.forEach(l=>{
+    l.items=[];
+    l.pred=null;
+  });
+
+  metaHistory.length=0;
+  metaPickHistory.length=0;   // 🔥 เพิ่มบรรทัดนี้
+
+  lastMetaPick=null;
+  currentAI=null;
+
+
+
+  render();
+}
+
+function metaAI(){
+
+  let scoreP=0;
+  let scoreB=0;
+
+  let dragon = detectDragon();
+  let pingpong = detectPingpong();
+
+  lanes.forEach((l,i)=>{
+    if(!l.pred) return;
+
+    let total=l.items.length;
+    if(total<2) return; // ตัด noise เล็กน้อย
+
+    let wins=l.items.filter(x=>x==='/').length;
+    let winRate=wins/total;
+
+    let recent=l.items.slice(-5);
+ 
+let recentWin = recent.length
+  ? recent.filter(x=>x==='/').length / recent.length
+  : 0;
+
+    // stability
+    let stability = total>=10 ? 1 : total/10;
+
+    // streak momentum
+    let streak=0;
+    for(let j=l.items.length-1;j>=0;j--){
+      if(l.items[j]==='/') streak++;
+      else break;
+    }
+    let momentum = Math.min(streak*0.05,0.2);
+
+    // volatility (แกว่งไหม)
+    let volatility=0;
+    for(let j=1;j<l.items.length;j++){
+      if(l.items[j]!==l.items[j-1])volatility++;
+    }
+  let reliability = Math.max(0, 1-(volatility/l.items.length));
+
+    // random penalty
+    let penalty = (i===6 || i===14)?0.8:1;
+
+    let weight=
+      winRate*0.35 +
+      recentWin*0.25 +
+      stability*0.15 +
+      momentum +
+      reliability*0.1;
+
+    weight*=penalty;
+
+    // 🔥 เพิ่มตรงนี้ (กัน overfit lane ใหม่)
+if(i === 15 || i === 16) weight *= 0.95;
+
+    if(dragon && l.pred!==dragon) weight*=0.7;
+    if(pingpong) weight*=0.85;
+
+    if(l.pred==='P') scoreP+=weight;
+    if(l.pred==='B') scoreB+=weight;
+
+  });
+
+  if(scoreP===0 && scoreB===0)
+    return {side:null,conf:0};
+
+  let side = scoreP>scoreB?'P':'B';
+  let conf = Math.abs(scoreP-scoreB)/(scoreP+scoreB)*100;
+
+  return {side,conf,scoreP,scoreB};
+}
+
+function metaForce(){
+
+  if(!metaHistory.length || !currentAI) 
+    return {side:null};
+
+  // คำนวณ META winrate
+  let wins = metaHistory.filter(x=>x==='/').length;
+  let total = metaHistory.length;
+  let metaPct = wins/total*100;
+
+  // ทำงานเฉพาะช่วง 48–52%
+  if(metaPct < 48 || metaPct > 52)
+    return {side:null};
+
+  // 🔥 หา lane ที่ดีที่สุดจริง
+  let bestLane = null;
+  let bestScore = 0;
+
+  lanes.forEach((l,i)=>{
+
+    if(!l.pred) return;
+    if(l.items.length < 5) return;        // ตัด lane ข้อมูลน้อย
+    if(i===6 || i===14) return;           // ตัด random lane
+
+    let w = l.items.filter(x=>x==='/').length;
+    let pct = w/l.items.length*100;
+
+    if(pct > bestScore){
+      bestScore = pct;
+      bestLane = l;
+    }
+
+  });
+
+  if(bestLane && bestLane.pred){
+    return {
+      side: bestLane.pred,
+      reason: `Force Best Lane (${bestScore.toFixed(1)}%)`
+    };
+  }
+
+  return {side:null};
+}
+
+
+/* === RENDER === */
+function render(){
+ document.getElementById('count').textContent=
+  `P=${history.filter(x=>x==='P').length} | B=${history.filter(x=>x==='B').length} | Total=${history.length}`;
+
+ let html='';
+ let best={i:0,conf:0};
+ lanes.forEach((l,i)=>{
+  let w=l.items.filter(x=>x==='/').length;
+  let t=l.items.length||1;
+  let pct=(w/t*100);
+  let cls='';
+  if(pct>=75)cls='gold';
+  else if(pct>=60)cls='good';
+  else if(pct<=35)cls='bad';
+  if(pct>best.conf){best={i,conf:pct}}
+  html+=`
+  <div class="lane ${cls}">
+    <strong>Lane ${i+1}</strong>
+    <span>[${l.pred||'-'}] ${l.items.join(' ')}</span>
+    <strong>${pct.toFixed(1)}%</strong>
+  </div>`;
+ });
+ document.getElementById('lanes').innerHTML=html;
+
+// 🔥 วางตรงนี้
+let assist = metaForce();
+let ab = document.getElementById('assistBox');
+
+if(assist.side){
+  let color = assist.side==='P'?'#33b5ff':'#ff6b6b';
+  ab.innerHTML = `
+    🔥 FORCE MODE:
+    <span style="color:${color}">
+      แทง ${assist.side}
+    </span>
+    <br>
+    <span style="font-size:12px;color:#aaa">
+      เหตุผล: ${assist.reason}
+    </span>
+  `;
+}else{
+  ab.innerHTML = '';
+}
+
+ document.getElementById('best').textContent=
+ `Best Lane: ${best.i+1} | %${best.conf.toFixed(1)} | Predict=${lanes[best.i].pred||'-'} | Conf=${best.conf.toFixed(1)}`;
+
+ /* ALERTS */
+ let d=detectDragon();
+ let p=detectPingpong();
+ let twoCut = detectTwoCutOne();
+ let ad=document.getElementById('alertDanger');
+ let as=document.getElementById('alertSafe');
+ ad.style.display=as.style.display='none';
+
+if(twoCut){
+  ad.textContent='⚠ ระวังเค้า 2 ตัด 1 ยาว ๆ';
+  ad.style.display='block';
+  as.style.display='none';
+  document.getElementById('zone').textContent='Zone: PATTERN 2-1';
+}
+else if(d){
+  ad.textContent=`มังกร ${d} ยาว — ระวังแทงสวน`;
+  ad.style.display='block';
+  as.style.display='none';
+  document.getElementById('zone').textContent='Zone: DANGER';
+}
+else if(p){
+  ad.textContent='เข้าปิงปอง — ระวังเด้ง/ตัด';
+  ad.style.display='block';
+  as.style.display='none';
+  document.getElementById('zone').textContent='Zone: DANGER';
+}
+else{
+  ad.style.display='none';
+  as.textContent='สถานะปกติ';
+  as.style.display='block';
+  document.getElementById('zone').textContent='Zone: NORMAL';
+}
+
+ document.getElementById('master').textContent=
+ `Master Vote: Lane ${best.i+1} | score=${best.conf.toFixed(1)}`;
+
+let ai = currentAI;
+
+let box = document.getElementById('aiBox');
+
+if(!ai || !ai.side){
+  box.innerHTML='WAIT — รอข้อมูลเพิ่ม';
+}
+else{
+  let color = ai.side==='P'?'#33b5ff':'#ff6b6b';
+  box.innerHTML=`
+    <div class="meta-side" style="color:${color}">
+  แทง: ${ai.side}
+</div>
+    <div>
+  Confidence:
+  <span class="meta-confidence">
+    ${ai.conf.toFixed(1)}%
+  </span>
+</div>
+
+    <div style="font-size:12px;color:#aaa">
+      P Score: ${ai.scoreP.toFixed(2)} |
+      B Score: ${ai.scoreB.toFixed(2)}
+    </div>
+  `;
+}
+
+/* ===== META PATTERN WARNING ===== */
+let pw = document.getElementById('patternWarn');
+pw.style.display = 'none';
+
+if(twoCut){
+  pw.innerHTML = `
+    ⚠ META WARNING:
+    <span style="color:#ff6b6b">
+      ระวังเค้า 2 ตัด 1 ยาว ๆ
+    </span>
+  `;
+  pw.style.display = 'block';
+}
+
+let mr = document.getElementById('metaResult');
+
+if(metaHistory.length){
+
+  let wins = metaHistory.filter(x=>x==='/').length;
+  let total = metaHistory.length;
+  let rawPct = wins/total*100;
+let pct = rawPct.toFixed(1);
+
+let adviceText = '';
+let adviceColor = '#ffd24d';
+
+if(rawPct < 50){
+  adviceText = 'ตานี้ควรเล่นสวน';
+  adviceColor = '#ff6b6b';
+}
+else if(rawPct > 50){
+  adviceText = 'ตานี้ควรเล่นตาม';
+  adviceColor = '#00ff88';
+}
+else{
+  adviceText = 'กลางพอดี ผู้เล่นจะ รอจังหวะ หรือ จะเล่นตามตัวแทง Meta ai หรือ จะเล่นตาม ตัวแทงผู้ช่วย Force Mode ผู้เล่นควรตัดสินใจเองได้';
+  adviceColor = '#ffd24d';
+}
+
+  let badges = metaHistory.map(r=>{
+    if(r === '/'){
+      return `<div class="badge win">✓</div>`;
+    }else{
+      return `<div class="badge lose">✕</div>`;
+    }
+  }).join('');
+
+ mr.innerHTML = `
+  <div class="meta-badges">
+    ${badges}
+  </div>
+
+  <div class="meta-summary">
+    ชนะ ${wins}/${total}
+    <span class="meta-pct">
+      (${pct}%)
+    </span>
+  </div>
+
+ <div class="meta-advice" style="
+  margin-top:6px;
+  font-weight:bold;
+  font-size:14px;
+  color:${adviceColor};
+">
+  ${adviceText}
+</div>
+`;
+
+}else{
+  mr.innerHTML = 'ยังไม่มีผล';
+}
+
+ drawRoad();
+}
+
+function drawRoad(){
+ const c=document.getElementById('road');
+ const g=c.getContext('2d');
+ g.clearRect(0,0,c.width,c.height);
+ let x=0,y=0,last=null;
+ history.forEach(v=>{
+  if(v===last)y++;else{x++;y=0}
+  if(y>=ROWS){y=0;x++}
+  g.strokeStyle=v==='P'?'#33b5ff':'#ff0000';
+  g.beginPath();
+  g.arc(x*12+6,y*12+6,5,0,Math.PI*2);
+  g.stroke();
+  last=v;
+ });
+}
+render();
+</script>
+
+</body>
+</html>
